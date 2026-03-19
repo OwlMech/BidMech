@@ -1,1 +1,87 @@
+/* Basic reset and typography */
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: #f4f4f5; /* Subtle gray background */
+    color: #18181b;
+    margin: 0;
+    padding: 12px;
+    box-sizing: border-box;
+}
 
+#app-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Spaces out the boxes */
+}
+
+/* The "boxes" for each section */
+section {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h2, h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    color: #27272a;
+    border-bottom: 1px solid #e4e4e7;
+    padding-bottom: 4px;
+}
+
+/* Tracker layout */
+.tracker-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+/* Inputs */
+input[type="number"] {
+    width: 60px;
+    padding: 6px;
+    border: 1px solid #d4d4d8;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+#bid-input {
+    width: 100px;
+    margin-right: 8px;
+}
+
+/* Buttons */
+button {
+    background-color: #3b82f6; /* Blue primary color */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #2563eb;
+}
+
+button:disabled {
+    background-color: #a1a1aa;
+    cursor: not-allowed;
+}
+
+/* Removes default margins on status text */
+p {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+hr {
+    display: none; /* Hidden because the sections act as boxes now */
+}
