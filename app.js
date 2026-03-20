@@ -1,15 +1,10 @@
-// A unique ID for your extension's data so it doesn't clash with others
 const EXTENSION_ID = "my-secret-bid-tracker";
-
 let myPoints = 0;
 
-// OBR.onReady ensures the code only runs AFTER Owlbear Rodeo is fully loaded
 OBR.onReady(async () => {
-    // Get this specific player's ID and Name
     const myId = OBR.player.id;
     const myName = await OBR.player.getName();
     
-    // Grab all our HTML elements
     const pointsDisplay = document.getElementById("points-display");
     const minusBtn = document.getElementById("minus-btn");
     const plusBtn = document.getElementById("plus-btn");
@@ -21,11 +16,21 @@ OBR.onReady(async () => {
     
     const roomStatusText = document.getElementById("room-status-text");
     const revealBtn = document.getElementById("reveal-btn");
+    const scoreboardList = document.getElementById("scoreboard-list"); // NEW
+
+    // --- 0. INITIALIZATION ---
+    // Fetch data on load in case we joined late or refreshed
+    const initialMetadata = await OBR.room.getMetadata();
+    const initialGameData = initialMetadata[EXTENSION_ID] || {};
+    if (initialGameData[myId]) {
+        myPoints = initialGameData[myId].points || 0;
+        pointsDisplay.value = myPoints;
+        maxBidDisplay.innerText = Math.max(0, myPoints);
+    }
 
     // --- 1. TRACKER LOGIC ---
     function updatePointsUI() {
         pointsDisplay.value = myPoints;
-        // Prevent bidding negative points, even if tracker is negative
         maxBidDisplay.innerText = Math.max(0, myPoints); 
         updateRoomMetadata();
     }
@@ -37,13 +42,11 @@ OBR.onReady(async () => {
         updatePointsUI(); 
     };
 
-    // --- 2. METADATA SYNC (HOW PLAYERS COMMUNICATE) ---
+    // --- 2. METADATA SYNC ---
     async function updateRoomMetadata(bidData = null) {
-        // Fetch current room data
         const metadata = await OBR.room.getMetadata();
         let gameData = metadata[EXTENSION_ID] || {};
         
-        // Update just OUR player's entry in the shared pool
         gameData[myId] = {
             name: myName,
             points: myPoints,
@@ -51,7 +54,6 @@ OBR.onReady(async () => {
             locked: bidData ? bidData.locked : (gameData[myId]?.locked || false)
         };
 
-        // Send the updated data back to the room
         await OBR.room.setMetadata({ [EXTENSION_ID]: gameData });
     }
 
@@ -59,7 +61,6 @@ OBR.onReady(async () => {
     lockBidBtn.onclick = () => {
         const bidAmount = parseInt(bidInput.value) || 0;
         
-        // Validation
         if (bidAmount > Math.max(0, myPoints)) {
             alert("You cannot bid more points than you have!");
             return;
@@ -69,27 +70,39 @@ OBR.onReady(async () => {
             return;
         }
         
-        // Lock the UI
         lockBidBtn.disabled = true;
         bidInput.disabled = true;
         lockBidBtn.innerText = "Bid Locked!";
         
-        // Update the room so others know you are ready
         updateRoomMetadata({ amount: bidAmount, locked: true });
     };
 
-    // --- 4. LISTENING FOR CHANGES & REVEALING ---
-    // This runs automatically whenever ANYONE updates the room metadata
+    // --- 4. LISTENING FOR CHANGES & SCOREBOARD ---
     OBR.room.onMetadataChange((metadata) => {
         const gameData = metadata[EXTENSION_ID];
         if (!gameData) return;
 
+        // Prevent Desync: Force local points to match the room's official record
+        if (gameData[myId] && gameData[myId].points !== undefined) {
+            myPoints = gameData[myId].points;
+            pointsDisplay.value = myPoints;
+            maxBidDisplay.innerText = Math.max(0, myPoints);
+        }
+
+        // Render Scoreboard
+        scoreboardList.innerHTML = ""; 
         const players = Object.values(gameData);
-        const lockedPlayers = players.filter(p => p.locked);
         
+        players.forEach(p => {
+            const pElem = document.createElement("div");
+            const lockStatus = p.locked ? "🔒 Ready" : "⏳ Bidding...";
+            pElem.innerText = `${p.name}: ${p.points} pts | ${lockStatus}`;
+            scoreboardList.appendChild(pElem);
+        });
+
+        const lockedPlayers = players.filter(p => p.locked);
         roomStatusText.innerText = `Players locked in: ${lockedPlayers.length}`;
 
-        // If at least 2 players are locked in, enable the reveal button
         if (lockedPlayers.length >= 2) {
             revealBtn.disabled = false;
         } else {
@@ -106,27 +119,28 @@ OBR.onReady(async () => {
         let winnerName = "No one";
         let isTie = false;
 
-        // Loop through everyone's data to find the winner
         for (const [playerId, data] of Object.entries(gameData)) {
             if (data.locked) {
-                if (data.bid > highestBid) {
-                    highestBid = data.bid;
+                // ANTI-CHEAT CLAMP: If someone somehow submitted a bid higher than their points, 
+                // we forcefully shrink it down to their actual available points.
+                const validBid = Math.min(data.bid, Math.max(0, data.points));
+                
+                if (validBid > highestBid) {
+                    highestBid = validBid;
                     winnerName = data.name;
                     isTie = false;
-                } else if (data.bid === highestBid) {
+                } else if (validBid === highestBid) {
                     isTie = true;
                 }
             }
         }
 
-        // Announce results
         if (isTie) {
             roomStatusText.innerText = `Result: It's a tie! Highest bid was ${highestBid}.`;
         } else {
             roomStatusText.innerText = `Result: ${winnerName} wins with a bid of ${highestBid} points!`;
         }
 
-        // Reset the locks for the next round
         const resetData = { ...gameData };
         for (const key in resetData) {
             resetData[key].locked = false;
@@ -134,7 +148,6 @@ OBR.onReady(async () => {
         }
         await OBR.room.setMetadata({ [EXTENSION_ID]: resetData });
         
-        // Unlock local UI
         lockBidBtn.disabled = false;
         bidInput.disabled = false;
         lockBidBtn.innerText = "Lock In Bid";
