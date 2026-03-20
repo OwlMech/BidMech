@@ -4,9 +4,9 @@
   "manifest_version": 1,
   "action": {
     "title": "Bid Tracker",
-    "icon": "/icon.svg",
-    "popover": "/index.html",
+    "icon": "icon.svg",
+    "popover": "index.html",
     "width": 350,
-    "height": 450
+    "height": 550
   }
 }
