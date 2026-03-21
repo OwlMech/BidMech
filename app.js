@@ -1,4 +1,6 @@
-console.log("HELLO! The fresh JavaScript has officially loaded!");
+import OBR from "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk/+esm";
+
+console.log("HELLO! The fresh modular JavaScript has officially loaded!, version 2");
 
 const EXTENSION_ID = "my-secret-bid-tracker";
 let myPoints = 0;
