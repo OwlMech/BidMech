@@ -1,3 +1,5 @@
+console.log("HELLO! The fresh JavaScript has officially loaded!");
+
 const EXTENSION_ID = "my-secret-bid-tracker";
 let myPoints = 0;
 
