@@ -5,7 +5,7 @@
   "action": {
     "title": "Bid Tracker",
     "icon": "https://owlmech.github.io/BidMech/icon.svg",
-    "popover": "https://owlmech.github.io/BidMech/index.html",
+    "popover": "https://owlmech.github.io/BidMech/index.html?v=1",
     "width": 350,
     "height": 550
   }
